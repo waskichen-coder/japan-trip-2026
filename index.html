@@ -30,6 +30,7 @@
             background: #f8fafc;
             border: 1px dashed #cbd5e1;
             position: relative;
+            transition: all 0.3s ease;
         }
 
         .app-input {
@@ -51,14 +52,7 @@
             font-weight: 400;
         }
         
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #38bdf8;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #38bdf8;
-        }
-        
+        /* 動畫 */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
         .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-5px); }
     </style>
@@ -72,12 +66,12 @@
             <div class="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-transparent to-transparent"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-[#f0f9ff] to-transparent opacity-30"></div>
             
-            <div class="absolute bottom-12 left-6 text-[#8FB5D8] z-20 drop-shadow-lg">
-                <div class="inline-block px-2 py-0.5 border border-sky-900/30 rounded-full bg-white/30 backdrop-blur-sm mb-2">
+            <div class="absolute bottom-12 left-6 text-sky-900 z-20">
+                <div class="inline-block px-2 py-0.5 border border-sky-900/20 rounded-full bg-white/40 backdrop-blur-sm mb-2">
                     <p class="text-[10px] font-medium tracking-widest uppercase">Winter Trip 2026</p>
                 </div>
                 <h1 class="text-3xl font-bold tracking-wide">東京・輕井澤</h1>
-                <p class="text-xs font-light mt-1 opacity-90 tracking-wider">Feb 10 - Feb 16</p>
+                <p class="text-xs font-medium mt-1 opacity-80 tracking-wider">Feb 10 - Feb 16</p>
             </div>
         </header>
 
@@ -182,15 +176,7 @@
                         <div class="w-1 h-4 bg-sky-400 rounded-full mr-3"></div>
                         <h2 class="text-lg font-bold text-slate-700 tracking-tight">每日行程</h2>
                     </div>
-                    
-                    <div class="flex items-center">
-                        <span class="text-[10px] text-slate-400 mr-2">{{ showAllTransports ? '編輯交通' : '隱藏空白' }}</span>
-                        <div class="relative inline-block w-8 h-4 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" v-model="showAllTransports" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300"/>
-                            <label class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-300 cursor-pointer"></label>
-                        </div>
                     </div>
-                </div>
 
                 <div class="space-y-0 pb-12">
                     <div v-for="(day, index) in itinerary" :key="index" class="relative pl-4">
@@ -219,25 +205,36 @@
                             </div>
                         </div>
 
-                        <div v-if="index < itinerary.length - 1 && transports[index]">
-                            <div v-show="showAllTransports || (transports[index].code || transports[index].time)" 
-                                 class="relative z-10 mb-6 ml-4">
-                                
+                        <div v-if="index < itinerary.length - 1 && transports[index]" class="relative z-10 mb-6 ml-4">
+                            
+                            <div v-if="!transports[index].collapsed" class="relative">
                                 <div class="absolute -left-[23px] top-1/2 -translate-y-1/2 w-4 h-[1px] bg-sky-200"></div>
                                 <div class="absolute -left-[26px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-sky-200"></div>
 
-                                <div class="transport-card rounded-lg p-3 flex items-center justify-between">
+                                <div class="transport-card rounded-lg p-3 pr-8 flex items-center justify-between shadow-sm">
+                                    <button @click="toggleTransport(index)" class="absolute top-1 right-1 text-slate-300 hover:text-sky-400 w-6 h-6 flex items-center justify-center rounded-full transition-colors">
+                                        <i class="fa-solid fa-minus text-[10px]"></i>
+                                    </button>
+
                                     <div class="flex items-center flex-1 mr-2">
                                         <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center mr-3 flex-shrink-0 text-slate-500">
                                             <i class="fa-solid fa-train-subway text-xs"></i>
                                         </div>
                                         <div class="w-full">
-                                            <input v-model="transports[index].code" placeholder="輸入車次 (例如: 新幹線 605)" class="text-xs font-bold text-slate-700 bg-transparent w-full outline-none placeholder-slate-300 mb-1">
-                                            <input v-model="transports[index].time" placeholder="輸入時間 (10:00 - 11:20)" class="text-[10px] text-slate-500 bg-transparent w-full outline-none placeholder-slate-300">
+                                            <input v-model="transports[index].code" placeholder="交通方式 / 車次" class="text-xs font-bold text-slate-700 bg-transparent w-full outline-none placeholder-slate-300 mb-1">
+                                            <input v-model="transports[index].time" placeholder="發車時間" class="text-[10px] text-slate-500 bg-transparent w-full outline-none placeholder-slate-300">
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div v-else class="relative h-4 flex items-center">
+                                <button @click="toggleTransport(index)" class="absolute -left-[27px] w-5 h-5 rounded-full bg-white border border-sky-200 flex items-center justify-center text-sky-400 text-[10px] shadow-sm hover:bg-sky-50 transition z-20">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <span class="text-[9px] text-slate-300 ml-2 tracking-wide font-light">新增交通資訊</span>
+                            </div>
+
                         </div>
 
                     </div>
@@ -260,7 +257,6 @@
                 return {
                     bannerImage: './1767939240519.jpg', 
                     savedStatus: false,
-                    showAllTransports: true,
                     
                     hotels: [
                         { id: 1, name: '輕井澤王子飯店', date: '2/10 - 2/12', room: '' },
@@ -280,7 +276,6 @@
                     transports: [] 
                 }
             },
-            // 修改點：使用 created 確保在畫面渲染前資料就準備好
             created() {
                 this.initTransports();
                 this.loadData();
@@ -295,32 +290,41 @@
                 },
                 transports: {
                     handler(newVal) {
-                        localStorage.setItem('trip-transports-v1', JSON.stringify(newVal));
+                        localStorage.setItem('trip-transports-v2', JSON.stringify(newVal));
                         this.triggerSave();
                     },
                     deep: true
                 }
             },
             methods: {
+                // 切換交通卡片的顯示/隱藏
+                toggleTransport(index) {
+                    if (this.transports[index]) {
+                        this.transports[index].collapsed = !this.transports[index].collapsed;
+                    }
+                },
                 initTransports() {
-                    // 初始化交通陣列，確保長度正確
                     const gaps = this.itinerary.length - 1;
-                    // 如果目前是空的，先填滿
                     while(this.transports.length < gaps) {
-                        this.transports.push({ code: '', time: '' });
+                        // 新增 collapsed 屬性，預設為 false (展開)
+                        this.transports.push({ code: '', time: '', collapsed: false });
                     }
                 },
                 loadData() {
                     const savedHotels = localStorage.getItem('trip-hotels-v3');
                     if (savedHotels) this.hotels = JSON.parse(savedHotels);
 
-                    const savedTransports = localStorage.getItem('trip-transports-v1');
+                    const savedTransports = localStorage.getItem('trip-transports-v2');
                     if (savedTransports) {
                         const loaded = JSON.parse(savedTransports);
-                        // 合併資料：保留舊資料，但確保長度跟現在行程一樣
                         for(let i=0; i < this.transports.length; i++) {
                             if(loaded[i]) {
-                                this.transports[i] = loaded[i];
+                                // 確保讀取舊資料時，如果沒有 collapsed 屬性，補上預設值
+                                this.transports[i] = {
+                                    code: loaded[i].code || '',
+                                    time: loaded[i].time || '',
+                                    collapsed: loaded[i].collapsed !== undefined ? loaded[i].collapsed : false
+                                };
                             }
                         }
                     }
@@ -344,5 +348,3 @@
     </script>
 </body>
 </html>
-
-
